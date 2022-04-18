@@ -51,6 +51,7 @@ export interface CoverageDataProviderWrapperInterface extends utils.Interface {
     "remove(string[])": FunctionFragment;
     "removeReceiver(uint256)": FunctionFragment;
     "set(string[],uint256[])": FunctionFragment;
+    "setCoverageDataProvider(address)": FunctionFragment;
     "setMessageBus(address)": FunctionFragment;
     "setPendingGovernance(address)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
@@ -80,6 +81,7 @@ export interface CoverageDataProviderWrapperInterface extends utils.Interface {
       | "remove"
       | "removeReceiver"
       | "set"
+      | "setCoverageDataProvider"
       | "setMessageBus"
       | "setPendingGovernance"
       | "transferOwnership"
@@ -162,6 +164,10 @@ export interface CoverageDataProviderWrapperInterface extends utils.Interface {
     values: [string[], BigNumberish[]]
   ): string;
   encodeFunctionData(
+    functionFragment: "setCoverageDataProvider",
+    values: [string]
+  ): string;
+  encodeFunctionData(
     functionFragment: "setMessageBus",
     values: [string]
   ): string;
@@ -236,6 +242,10 @@ export interface CoverageDataProviderWrapperInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "set", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "setCoverageDataProvider",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "setMessageBus",
     data: BytesLike
   ): Result;
@@ -249,6 +259,7 @@ export interface CoverageDataProviderWrapperInterface extends utils.Interface {
   ): Result;
 
   events: {
+    "CoverageDataProviderSet(address)": EventFragment;
     "GovernanceLocked()": EventFragment;
     "GovernancePending(address)": EventFragment;
     "GovernanceTransferred(address,address)": EventFragment;
@@ -259,6 +270,7 @@ export interface CoverageDataProviderWrapperInterface extends utils.Interface {
     "ReceiverSet(uint64,address)": EventFragment;
   };
 
+  getEvent(nameOrSignatureOrTopic: "CoverageDataProviderSet"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "GovernanceLocked"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "GovernancePending"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "GovernanceTransferred"): EventFragment;
@@ -268,6 +280,17 @@ export interface CoverageDataProviderWrapperInterface extends utils.Interface {
   getEvent(nameOrSignatureOrTopic: "ReceiverRemoved"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "ReceiverSet"): EventFragment;
 }
+
+export interface CoverageDataProviderSetEventObject {
+  coverageDataProvider: string;
+}
+export type CoverageDataProviderSetEvent = TypedEvent<
+  [string],
+  CoverageDataProviderSetEventObject
+>;
+
+export type CoverageDataProviderSetEventFilter =
+  TypedEventFilter<CoverageDataProviderSetEvent>;
 
 export interface GovernanceLockedEventObject {}
 export type GovernanceLockedEvent = TypedEvent<[], GovernanceLockedEventObject>;
@@ -485,6 +508,11 @@ export interface CoverageDataProviderWrapper extends BaseContract {
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    setCoverageDataProvider(
+      _coverageDataProvider: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     setMessageBus(
       _messageBus: string,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -597,6 +625,11 @@ export interface CoverageDataProviderWrapper extends BaseContract {
     overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  setCoverageDataProvider(
+    _coverageDataProvider: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   setMessageBus(
     _messageBus: string,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -699,6 +732,11 @@ export interface CoverageDataProviderWrapper extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    setCoverageDataProvider(
+      _coverageDataProvider: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     setMessageBus(
       _messageBus: string,
       overrides?: CallOverrides
@@ -716,6 +754,13 @@ export interface CoverageDataProviderWrapper extends BaseContract {
   };
 
   filters: {
+    "CoverageDataProviderSet(address)"(
+      coverageDataProvider?: null
+    ): CoverageDataProviderSetEventFilter;
+    CoverageDataProviderSet(
+      coverageDataProvider?: null
+    ): CoverageDataProviderSetEventFilter;
+
     "GovernanceLocked()"(): GovernanceLockedEventFilter;
     GovernanceLocked(): GovernanceLockedEventFilter;
 
@@ -870,6 +915,11 @@ export interface CoverageDataProviderWrapper extends BaseContract {
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    setCoverageDataProvider(
+      _coverageDataProvider: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     setMessageBus(
       _messageBus: string,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -988,6 +1038,11 @@ export interface CoverageDataProviderWrapper extends BaseContract {
       _uwpNames: string[],
       _amounts: BigNumberish[],
       overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setCoverageDataProvider(
+      _coverageDataProvider: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     setMessageBus(

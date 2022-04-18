@@ -42,6 +42,9 @@ contract CoverageDataProviderWrapper is MultichainWrapper, MessageSenderApp, Mes
     /// @notice Emitted when a message is received.
     event MessageReceived(address sender, uint64 srcChainId, uint64 nonce, bytes message);
 
+    /// @notice Emitted when coverage data provider is set.
+    event CoverageDataProviderSet(address coverageDataProvider);
+
     /**
      * @notice Constructs wrapper `CoverageDataProviderWrapper`.
      * @param _governance The governor address.
@@ -128,6 +131,19 @@ contract CoverageDataProviderWrapper is MultichainWrapper, MessageSenderApp, Mes
         
         emit MessageReceived(_sender, _srcChainId, request.nonce, _message);
         return ExecutionStatus.Success;
+    }
+
+    /***************************************
+     GOVERNANCE FUNCTIONS
+    ***************************************/
+
+    /**
+     * @notice Sets new coverage data provider address.
+     * @param _coverageDataProvider The new coverage data provider address to set.
+    */
+    function setCoverageDataProvider(address _coverageDataProvider) external onlyGovernance {
+        coverageDataProvider = _coverageDataProvider;
+        emit CoverageDataProviderSet(_coverageDataProvider);
     }
 
     /***************************************
