@@ -3,26 +3,40 @@ const { waffle, ethers } = hardhat;
 const { deployContract, provider } = waffle;
 const BN = ethers.BigNumber;
 import { config as dotenv_config } from "dotenv";
-import { logContractAddress, isDeployed } from "../utils";
+import { logContractAddress, isDeployed, expectDeployed } from "../utils";
 import { CoverageDataProviderWrapper } from "../../typechain-types/contracts/CoverageDataProviderWrapper";
+import { Deployer } from "../../typechain-types/contracts/utils/Deployer";
+import { Registry } from "../../typechain-types/contracts/utils/Registry";
 
 dotenv_config();
 
 const deployer = new ethers.Wallet(JSON.parse(process.env.GOERLI_ACCOUNTS || '[]')[0], provider);
 
+import { create2Contract } from "./../create2Contract";
+
+import { import_artifacts, ArtifactImports } from "./../../test/utilities/artifact_importer";
+import { getNetworkSettings } from "../getNetworkSettings";
+import { expect } from "chai";
+
 // CELER MESSAGE_BUS
-const CELER_MESSAGE_BUS = "0xF25170F86E4291a99a9A560032Fe9948b8BcFBB2"
+const CELER_MESSAGE_BUS_ADDRESS              = "0xF25170F86E4291a99a9A560032Fe9948b8BcFBB2";
 
 // contract addresses
-const COVERAGE_DATA_PROVIDER_ADDRESS_GOERLI = "0x9aD91a736E10c02A04C7a7B5AC03d6ABf194Dd00";
-const COVERAGE_DATA_PROVIDER_ADDRESS_MUMBAI = "0x42D3565cf5D37acB1980638F9364EE65ae571c3F";
+const COVERAGE_DATA_PROVIDER_ADDRESS         = "0x501ACe6D80111c9B54FA36EEC5f1B213d7F24770";
+const DEPLOYER_CONTRACT_ADDRESS              = "0x501aCe4732E4A80CC1bc5cd081BEe7f88ff694EF";
+const REGISTRY_ADDRESS                       = "0x501ACe0f576fc4ef9C0380AA46A578eA96b85776";
+const COVERAGE_DATA_PROVIDER_WRAPPER_ADDRESS = "0x501Acef201B7Ad6FFe86A37d83df757454924aD5";
 
-const COVERAGE_DATA_PROVIDER_WRAPPER_ADDRESS = "0x165Cd2680600B9eb254A089D37000621B441e2b2";
-
+let artifacts: ArtifactImports;
+let deployerContract: Deployer;
+let registry: Registry;
 let coverageDataProviderWrapper: CoverageDataProviderWrapper;
+
 let signerAddress: string;
+let networkSettings: any;
 
 async function main() {
+  artifacts = await import_artifacts();
   signerAddress = await deployer.getAddress();
   console.log(`Using ${signerAddress} as deployer and governor`);
 
@@ -32,6 +46,20 @@ async function main() {
     let tx = await funder.sendTransaction({to: signerAddress, value: BN.from("100000000000000000000")});
     await tx.wait();
   }
+
+  let chainID = (await provider.getNetwork()).chainId;
+  networkSettings = getNetworkSettings(chainID);
+
+  await expectDeployed(DEPLOYER_CONTRACT_ADDRESS);
+  await expectDeployed(CELER_MESSAGE_BUS_ADDRESS);
+  await expectDeployed(COVERAGE_DATA_PROVIDER_ADDRESS);
+  await expectDeployed(REGISTRY_ADDRESS);
+  deployerContract = (await ethers.getContractAt(artifacts.Deployer.abi, DEPLOYER_CONTRACT_ADDRESS)) as unknown as Deployer;
+  registry = (await ethers.getContractAt(artifacts.Registry.abi, REGISTRY_ADDRESS)) as unknown as Registry;
+  let messageBusAddress = await registry.get("messagebus");
+  expect(messageBusAddress).eq(CELER_MESSAGE_BUS_ADDRESS);
+  let dataProviderAddress = await registry.get("coverageDataProvider");
+  expect(dataProviderAddress).eq(COVERAGE_DATA_PROVIDER_ADDRESS);
 
   // deploy contracts
   await deployCoverageDataProviderWrapper();
@@ -46,9 +74,21 @@ async function deployCoverageDataProviderWrapper() {
     coverageDataProviderWrapper =  contract.attach(COVERAGE_DATA_PROVIDER_WRAPPER_ADDRESS) as CoverageDataProviderWrapper;
   } else {
     console.log("Deploying Coverage Data Provider Wrapper");
-    const contract = await ethers.getContractFactory("CoverageDataProviderWrapper");
-    coverageDataProviderWrapper = (await contract.deploy(signerAddress, CELER_MESSAGE_BUS, COVERAGE_DATA_PROVIDER_ADDRESS_GOERLI)) as CoverageDataProviderWrapper;
+    //const contract = await ethers.getContractFactory("CoverageDataProviderWrapper");
+    //coverageDataProviderWrapper = (await contract.deploy(signerAddress, REGISTRY_ADDRESS)) as CoverageDataProviderWrapper;
+    const res = await create2Contract(deployer, artifacts.CoverageDataProviderWrapper, [signerAddress, registry.address], {}, "", deployerContract.address);
+    coverageDataProviderWrapper = (await ethers.getContractAt(artifacts.CoverageDataProviderWrapper.abi, res.address)) as unknown as CoverageDataProviderWrapper;
+    await expectDeployed(coverageDataProviderWrapper.address);
     console.log(`Deployed Coverage Data Provider Wrapper to ${coverageDataProviderWrapper.address}`);
+
+    let messageBusAddress = await coverageDataProviderWrapper.messageBus();
+    expect(messageBusAddress).eq(CELER_MESSAGE_BUS_ADDRESS);
+    let dataProviderAddress = await coverageDataProviderWrapper.coverageDataProvider();
+    expect(dataProviderAddress).eq(COVERAGE_DATA_PROVIDER_ADDRESS);
+
+    console.log("Adding receiver");
+    let tx2 = await coverageDataProviderWrapper.connect(deployer).addReceiver(80001, COVERAGE_DATA_PROVIDER_WRAPPER_ADDRESS, networkSettings.overrides);
+    await tx2.wait(networkSettings.confirmations);
   }
 }
 
