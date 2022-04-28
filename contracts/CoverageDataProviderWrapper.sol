@@ -5,6 +5,7 @@ import "sgn-v2-contracts/contracts/message/framework/MessageSenderApp.sol";
 import "sgn-v2-contracts/contracts/message/framework/MessageReceiverApp.sol";
 
 import "./interfaces/ICoverageDataProviderV2.sol";
+import "./interfaces/utils/IRegistry.sol";
 import "./utils/MultichainWrapper.sol";
 
 contract CoverageDataProviderWrapper is MultichainWrapper, MessageSenderApp, MessageReceiverApp {
@@ -19,7 +20,7 @@ contract CoverageDataProviderWrapper is MultichainWrapper, MessageSenderApp, Mes
         string[] uwpNames;
         uint256[] uwpAmounts;
     }
-  
+
     enum OperationType {
         SET,
         REMOVE
@@ -48,13 +49,16 @@ contract CoverageDataProviderWrapper is MultichainWrapper, MessageSenderApp, Mes
     /**
      * @notice Constructs wrapper `CoverageDataProviderWrapper`.
      * @param _governance The governor address.
-     * @param _messageBus The Celer-IM message bus address.
-     * @param _coverageDataProvider The source chain `CoverageDataProviderAddress`.
+     * @param _registry The registry address.
     */
-    constructor(address _governance, address _messageBus, address _coverageDataProvider) MultichainWrapper(_governance) {
-        require(_messageBus != address(0x0), "zero address messagebus");
-        require(_coverageDataProvider != address(0x0), "zero address data provider");
+    constructor(address _governance, address _registry) MultichainWrapper(_governance) {
+        require(_registry != address(0x0), "zero address registry");
+        IRegistry registry = IRegistry(_registry);
+        (bool success1, address _messageBus) = registry.tryGet("messagebus");
+        require(success1, "zero address messagebus");
         messageBus = _messageBus;
+        (bool success2, address _coverageDataProvider) = registry.tryGet("coverageDataProvider");
+        require(success2, "zero address data provider");
         coverageDataProvider = _coverageDataProvider;
     }
 
@@ -68,7 +72,7 @@ contract CoverageDataProviderWrapper is MultichainWrapper, MessageSenderApp, Mes
 
         // call operation in same chain
         ICoverageDataProviderV2(coverageDataProvider).set(_uwpNames, _amounts);
-        
+
         // increment nonce
         nonce++;
 
@@ -76,7 +80,7 @@ contract CoverageDataProviderWrapper is MultichainWrapper, MessageSenderApp, Mes
         bytes memory message = abi.encode(
               MessageRequest({
                 nonce: nonce,
-                operationType: OperationType.SET, 
+                operationType: OperationType.SET,
                 uwpNames: _uwpNames,
                 uwpAmounts: _amounts
               })
@@ -99,7 +103,7 @@ contract CoverageDataProviderWrapper is MultichainWrapper, MessageSenderApp, Mes
         bytes memory message = abi.encode(
               MessageRequest({
                 nonce: nonce,
-                operationType: OperationType.REMOVE, 
+                operationType: OperationType.REMOVE,
                 uwpNames: _uwpNames,
                 uwpAmounts: new uint256[](0)
               })
@@ -120,15 +124,15 @@ contract CoverageDataProviderWrapper is MultichainWrapper, MessageSenderApp, Mes
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
         // decode message
-        MessageRequest memory request = abi.decode((_message), (MessageRequest));       
-       
+        MessageRequest memory request = abi.decode((_message), (MessageRequest));
+
         // execute operation
         if (request.operationType == OperationType.SET) {
            ICoverageDataProviderV2(coverageDataProvider).set(request.uwpNames, request.uwpAmounts);
         } else if (request.operationType == OperationType.REMOVE) {
            ICoverageDataProviderV2(coverageDataProvider).remove(request.uwpNames);
         }
-        
+
         emit MessageReceived(_sender, _srcChainId, request.nonce, _message);
         return ExecutionStatus.Success;
     }
