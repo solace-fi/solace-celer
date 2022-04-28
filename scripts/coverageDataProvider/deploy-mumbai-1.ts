@@ -78,12 +78,17 @@ async function deployCoverageDataProviderWrapper() {
     //coverageDataProviderWrapper = (await contract.deploy(signerAddress, REGISTRY_ADDRESS)) as CoverageDataProviderWrapper;
     const res = await create2Contract(deployer, artifacts.CoverageDataProviderWrapper, [signerAddress, registry.address], {}, "", deployerContract.address);
     coverageDataProviderWrapper = (await ethers.getContractAt(artifacts.CoverageDataProviderWrapper.abi, res.address)) as unknown as CoverageDataProviderWrapper;
+    await expectDeployed(coverageDataProviderWrapper.address);
     console.log(`Deployed Coverage Data Provider Wrapper to ${coverageDataProviderWrapper.address}`);
 
     let messageBusAddress = await coverageDataProviderWrapper.messageBus();
     expect(messageBusAddress).eq(CELER_MESSAGE_BUS_ADDRESS);
     let dataProviderAddress = await coverageDataProviderWrapper.coverageDataProvider();
     expect(dataProviderAddress).eq(COVERAGE_DATA_PROVIDER_ADDRESS);
+
+    console.log("Adding receiver");
+    let tx2 = await coverageDataProviderWrapper.connect(deployer).addReceiver(5, COVERAGE_DATA_PROVIDER_WRAPPER_ADDRESS, networkSettings.overrides);
+    await tx2.wait(networkSettings.confirmations);
   }
 }
 

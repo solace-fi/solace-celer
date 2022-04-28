@@ -12,7 +12,7 @@ const { provider } = waffle;
 import { import_artifacts, ArtifactImports } from "./../test/utilities/artifact_importer";
 import { isDeployed } from "./utils";
 import { getNetworkSettings } from "./getNetworkSettings";
-import { Deployer } from "../typechain-types";
+import { Deployer } from "../typechain-types/contracts/utils/Deployer";
 let artifacts: ArtifactImports;
 
 let initialized = false;
