@@ -10,7 +10,7 @@ import { Registry } from "../../typechain-types/contracts/utils/Registry";
 
 dotenv_config();
 
-const deployer = new ethers.Wallet(JSON.parse(process.env.GOERLI_ACCOUNTS || '[]')[0], provider);
+const deployer = new ethers.Wallet(process.env.PRIVATE_KEY || '', provider);
 
 import { create2Contract } from "./../create2Contract";
 
@@ -56,16 +56,26 @@ async function main() {
   await expectDeployed(REGISTRY_ADDRESS);
   deployerContract = (await ethers.getContractAt(artifacts.Deployer.abi, DEPLOYER_CONTRACT_ADDRESS)) as unknown as Deployer;
   registry = (await ethers.getContractAt(artifacts.Registry.abi, REGISTRY_ADDRESS)) as unknown as Registry;
-  let messageBusAddress = await registry.get("messagebus");
-  expect(messageBusAddress).eq(CELER_MESSAGE_BUS_ADDRESS);
-  let dataProviderAddress = await registry.get("coverageDataProvider");
-  expect(dataProviderAddress).eq(COVERAGE_DATA_PROVIDER_ADDRESS);
 
   // deploy contracts
+  await registerAddresses()
   await deployCoverageDataProviderWrapper();
 
   // log addresses
   await logAddresses();
+}
+
+async function registerAddresses() {
+  // set default addresses
+  if (await registry.governance() == signerAddress) {
+    //let tx1 = await registry.connect(deployer).set(["messagebus", "coverageDataProvider"], [CELER_MESSAGE_BUS_ADDRESS, COVERAGE_DATA_PROVIDER_ADDRESS], networkSettings.overrides);
+    //await tx1.wait(networkSettings.confirmations);
+
+    let messageBusAddress = await registry.get("messagebus");
+    expect(messageBusAddress).eq(CELER_MESSAGE_BUS_ADDRESS);
+    let dataProviderAddress = await registry.get("coverageDataProvider");
+    expect(dataProviderAddress).eq(COVERAGE_DATA_PROVIDER_ADDRESS);
+  }
 }
 
 async function deployCoverageDataProviderWrapper() {
@@ -87,9 +97,21 @@ async function deployCoverageDataProviderWrapper() {
     expect(dataProviderAddress).eq(COVERAGE_DATA_PROVIDER_ADDRESS);
 
     console.log("Adding receiver");
-    let tx2 = await coverageDataProviderWrapper.connect(deployer).addReceiver(137, COVERAGE_DATA_PROVIDER_WRAPPER_ADDRESS, networkSettings.overrides);
+    /*
+    let tx2 = await coverageDataProviderWrapper.connect(deployer).addReceiver(137, coverageDataProviderWrapper.address, networkSettings.overrides);
+    await tx2.wait(networkSettings.confirmations);
+    */
+    let tx2 = await coverageDataProviderWrapper.connect(deployer).addReceiver(250, coverageDataProviderWrapper.address, networkSettings.overrides);
     await tx2.wait(networkSettings.confirmations);
   }
+
+  console.log("Adding receiver");
+  /*
+  let tx2 = await coverageDataProviderWrapper.connect(deployer).addReceiver(137, coverageDataProviderWrapper.address, networkSettings.overrides);
+  await tx2.wait(networkSettings.confirmations);
+  */
+  let tx2 = await coverageDataProviderWrapper.connect(deployer).addReceiver(250, coverageDataProviderWrapper.address, networkSettings.overrides);
+  await tx2.wait(networkSettings.confirmations);
 }
 
 async function logAddresses() {
