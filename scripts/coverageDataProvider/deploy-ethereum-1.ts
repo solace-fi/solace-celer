@@ -18,8 +18,8 @@ import { import_artifacts, ArtifactImports } from "./../../test/utilities/artifa
 import { getNetworkSettings } from "../getNetworkSettings";
 import { expect } from "chai";
 
-// CELER MESSAGE_BUS
-const CELER_MESSAGE_BUS_ADDRESS              = "0x7d43AABC515C356145049227CeE54B608342c0ad"
+// CELER MESSAGE_BUS MAINNET
+const CELER_MESSAGE_BUS_ADDRESS              = "0x4066D196A423b2b3B8B054f4F40efB47a74E200C";
 
 // contract addresses
 const COVERAGE_DATA_PROVIDER_ADDRESS         = "0x501ACe6D80111c9B54FA36EEC5f1B213d7F24770";
@@ -95,10 +95,22 @@ async function deployCoverageDataProviderWrapper() {
     expect(messageBusAddress).eq(CELER_MESSAGE_BUS_ADDRESS);
     let dataProviderAddress = await coverageDataProviderWrapper.coverageDataProvider();
     expect(dataProviderAddress).eq(COVERAGE_DATA_PROVIDER_ADDRESS);
+
+    console.log("Adding receiver");
+    /*
+    let tx2 = await coverageDataProviderWrapper.connect(deployer).addReceiver(137, coverageDataProviderWrapper.address, networkSettings.overrides);
+    await tx2.wait(networkSettings.confirmations);
+    */
+    let tx2 = await coverageDataProviderWrapper.connect(deployer).addReceiver(250, coverageDataProviderWrapper.address, networkSettings.overrides);
+    await tx2.wait(networkSettings.confirmations);
   }
 
-  console.log("Removing receiver");
-  let tx2 = await coverageDataProviderWrapper.connect(deployer).removeReceiver(0);
+  console.log("Adding receiver");
+  /*
+  let tx2 = await coverageDataProviderWrapper.connect(deployer).addReceiver(137, coverageDataProviderWrapper.address, networkSettings.overrides);
+  await tx2.wait(networkSettings.confirmations);
+  */
+  let tx2 = await coverageDataProviderWrapper.connect(deployer).addReceiver(250, coverageDataProviderWrapper.address, networkSettings.overrides);
   await tx2.wait(networkSettings.confirmations);
 }
 

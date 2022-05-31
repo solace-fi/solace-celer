@@ -19,7 +19,7 @@ import { getNetworkSettings } from "../getNetworkSettings";
 import { expect } from "chai";
 
 // CELER MESSAGE_BUS
-const CELER_MESSAGE_BUS_ADDRESS              = "0x7d43AABC515C356145049227CeE54B608342c0ad"
+const CELER_MESSAGE_BUS_ADDRESS              = "0xFF4E183a0Ceb4Fa98E63BbF8077B929c8E5A2bA4"
 
 // contract addresses
 const COVERAGE_DATA_PROVIDER_ADDRESS         = "0x501ACe6D80111c9B54FA36EEC5f1B213d7F24770";
@@ -84,8 +84,6 @@ async function deployCoverageDataProviderWrapper() {
     coverageDataProviderWrapper =  contract.attach(COVERAGE_DATA_PROVIDER_WRAPPER_ADDRESS) as CoverageDataProviderWrapper;
   } else {
     console.log("Deploying Coverage Data Provider Wrapper");
-    //const contract = await ethers.getContractFactory("CoverageDataProviderWrapper");
-    //coverageDataProviderWrapper = (await contract.deploy(signerAddress, REGISTRY_ADDRESS)) as CoverageDataProviderWrapper;
     const res = await create2Contract(deployer, artifacts.CoverageDataProviderWrapper, [signerAddress, registry.address], {}, "", deployerContract.address);
     coverageDataProviderWrapper = (await ethers.getContractAt(artifacts.CoverageDataProviderWrapper.abi, res.address)) as unknown as CoverageDataProviderWrapper;
     await expectDeployed(coverageDataProviderWrapper.address);
@@ -96,10 +94,6 @@ async function deployCoverageDataProviderWrapper() {
     let dataProviderAddress = await coverageDataProviderWrapper.coverageDataProvider();
     expect(dataProviderAddress).eq(COVERAGE_DATA_PROVIDER_ADDRESS);
   }
-
-  console.log("Removing receiver");
-  let tx2 = await coverageDataProviderWrapper.connect(deployer).removeReceiver(0);
-  await tx2.wait(networkSettings.confirmations);
 }
 
 async function logAddresses() {
