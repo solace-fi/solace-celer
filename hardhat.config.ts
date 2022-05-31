@@ -41,10 +41,10 @@ const config: HardhatUserConfig = {
   },
   networks: {
     localhost: { url: "http://127.0.0.1:8545" },
-    mainnet: {
-      url: process.env.MAINNET_URL || "",
+    ethereum: {
+      url: process.env.ETHEREUM_URL || "",
       chainId: 1,
-      accounts: JSON.parse(process.env.MAINNET_ACCOUNTS || "[]"),
+      accounts: JSON.parse(process.env.ETHEREUM_ACCOUNTS || "[]"),
     },
     rinkeby: {
       url: process.env.RINKEBY_URL || "",
@@ -81,6 +81,16 @@ const config: HardhatUserConfig = {
       chainId: 80001,
       accounts: JSON.parse(process.env.MUMBAI_ACCOUNTS || "[]"),
     },
+    fantom: {
+      url: process.env.FANTOM_URL || '',
+      chainId: 250,
+      accounts: JSON.parse(process.env.FANTOM_ACCOUNTS || '[]')
+    },
+    fantom_testnet: {
+      url: process.env.FANTOM_TESTNET_URL || '',
+      chainId: 4002,
+      accounts: JSON.parse(process.env.FANTOM_TESTNET_ACCOUNTS || '[]')
+    },
   },
   mocha: {
     timeout: 3600000, // one hour
@@ -93,10 +103,15 @@ const config: HardhatUserConfig = {
       rinkeby: process.env.ETHERSCAN_API_KEY || "",
       goerli:  process.env.ETHERSCAN_API_KEY || "",
       kovan:   process.env.ETHERSCAN_API_KEY || "",
+      // aurora
+      aurora: process.env.AURORASCAN_API_KEY || "",
+      auroraTestnet: process.env.AURORASCAN_API_KEY || "",
       // polygon
       polygon: process.env.POLYGONSCAN_API_KEY || "",
       polygonMumbai: process.env.POLYGONSCAN_API_KEY || "",
-
+      // fantom
+      opera: process.env.FTMSCAN_API_KEY || "",
+      ftmTestnet: process.env.FTMSCAN_API_KEY || "",
     }
   },
 };
